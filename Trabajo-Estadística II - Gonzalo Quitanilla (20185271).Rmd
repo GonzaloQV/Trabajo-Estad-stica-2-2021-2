@@ -1,0 +1,438 @@
+---
+title: "Trabajo Estadística 2"
+date: "`22/10/2021`"
+author: "`Gonzalo Uriel Quintanilla Villanueva``"
+output:
+rmdformats::readthedown:
+code_folding: show
+self_contained: true
+thumbnails: false
+lightbox: false
+pkgdown:
+as_is: true
+---
+
+```{r}
+library(rmdformats)
+```
+
+```{r}
+library(rio)
+data1<- import("C:/Users/GONZALO/Desktop/CAPITULO_300_persona.sav")
+```
+
+##LIMPIEZA DE LA BASE DE DATOS
+```{r}
+str(data1$C200_P7) 
+str(data1$C200_P8_A)
+str(data1$C300_P11A_1) 
+str(data1$C300_P11A_2)
+str(data1$C300_P11A_3)
+str(data1$C300_P11A_4) 
+str(data1$C300_P11A_5)
+str(data1$ESTRATO_SOCIOE) 
+str(data1$REGIÓN) 
+```
+
+```{r}
+data1$C200_P7 <- as.factor(data1$C200_P7)
+```
+
+```{r}
+library(car)
+data1$ESTRATO_SOCIOE = recode(data1$ESTRATO_SOCIOE, "1= 1 ; 2= 1 ; 3= 2; 4=3; 5=3")
+data1$ESTRATO_SOCIOE = as.ordered(data1$ESTRATO_SOCIOE)
+levels(data1$ESTRATO_SOCIOE) <- c("Alto", "Medio", "Bajo")
+table(data1$ESTRATO_SOCIOE)
+```
+
+
+```{r}
+levels(data1$C200_P7) <- c("Hombre", "Mujer")
+table(data1$C200_P7)
+```
+
+```{r}
+#Confianza Institucional
+data1$Confianza <- c(data1$C300_P11A_1 + data1$C300_P11A_2 + data1$C300_P11A_3 + data1$C300_P11A_4
+                     + data1$C300_P11A_5)
+summary(data1$Confianza)
+```
+
+
+```{r}
+data1$Confianza = as.numeric(data1$Confianza)
+data1$Confianza = ((data1$Confianza - 5)/15)*10
+summary(data1$Confianza)
+```
+
+```{r}
+#Percepción de Seguridad en Lugares públicos
+data1$Seguridad_LP <- c (data1$C300_P1_2 + data1$C300_P1_3 + data1$C300_P1_4 + data1$C300_P1_5 
+                       + data1$C300_P1_6 + data1$C300_P1_7 + data1$C300_P1_10)
+summary(data1$Seguridad_LP)
+```
+
+```{r}
+data1$Seguridad_LP = as.numeric(data1$Seguridad_LP)
+data1$Seguridad_LP = ((data1$Seguridad_LP - 7)/28)*10
+summary(data1$Seguridad_LP)
+```
+
+```{r}
+#Percepción de Seguridad Lugares Privados
+data1$Seguridad_LPrv <- c (data1$C300_P1_1 + data1$C300_P1_8 + data1$C300_P1_11)
+summary(data1$Seguridad_LPrv)
+```
+
+```{r}
+data1$Seguridad_LPrv = as.numeric(data1$Seguridad_LPrv)
+data1$Seguridad_LPrv = ((data1$Seguridad_LPrv - 3)/12)*10
+summary(data1$Seguridad_LPrv)
+```
+
+
+```{r}
+#Delincuencia
+data1$C300_P6_4 = as.factor(data1$C300_P6_4)
+levels(data1$C300_P6_4) <- c("Disminuyó", "Se Mantuvo", "Aumentó")
+table(data1$C300_P6_4)
+```
+
+```{r}
+#Vigilancia
+str(data1$C300_P13_1)
+str(data1$C300_P13_2)
+data1$Vigilancia = c(data1$C300_P13_1 + data1$C300_P13_2)
+summary(data1$Vigilancia)
+```
+
+```{r}
+data1$Vigilancia = as.numeric(data1$Vigilancia)
+data1$Vigilancia = ((data1$Vigilancia - 2)/8)*10
+summary(data1$Vigilancia)
+```
+
+#Elegir solo los datos obtenidos en Lima metropolitana 
+```{r}
+data1$NOMBREDD = as.factor(data1$NOMBREDD)
+s0 = subset(data1, NOMBREPV =="LIMA")
+```
+
+#Elegir solo las variables que son idóneas para el caso y creamos una Nueva Base de Datos, pero solo de Lima metropolitana
+```{r}
+data= subset(s0, select = c(NOMBREPV, NOMBREDI, C200_P7, C200_P8_A, C300_P6_4, Confianza ,Seguridad_LP,
+                            Seguridad_LPrv, Vigilancia, ESTRATO_SOCIOE))
+data = na.omit(data)
+```
+
+```{r}
+names(data)
+```
+
+```{r}
+names(data) <- c("Ciudad", "Distrito", "Sexo", "Edad", "Delincuencia", "Confianza","Seguridad_LP",
+                 "Seguridad_LPrv", "Vigilancia", "Estrato_Sociodemográfico")
+names(data)
+```
+
+**Variables:**
+Delincuencia -> Percepción ciudadana respecto a la delincuencia
+Confianza -> Confianza en las instituciones como la PNP, Serenzargo, Poder Judicial, etc.
+Seguridad_LP -> Percepción sobre la seguridad en lugares públicos
+Seguridad_LPrv -> Percepción sobre la seugridad en lugares privados
+Vigilancia -> Percepción sobre qué tanto hay vigilancia policial y de serenazgo en cada zona
+
+```{r}
+library(fastDummies)
+data=dummy_cols(data, select_columns = c("Estrato_Sociodemográfico"))
+```
+
+```{r}
+data$Estrato_Sociodemográfico_Alto <- as.factor(data$Estrato_Sociodemográfico_Alto)
+data$Estrato_Sociodemográfico_Medio <- as.factor(data$Estrato_Sociodemográfico_Medio)
+data$Estrato_Sociodemográfico_Bajo <- as.factor(data$Estrato_Sociodemográfico_Bajo)
+```
+
+```{r}
+#Se remueve las bases que no son de utilidad
+rm(list = c("data1", "s0"))
+```
+
+Todo lo anterior se hizo para limpiar la data y escoger ciertas variables que serán 
+de utilidad para el estudio del caso. La nueva base de datos se llama "data"
+
+#Media de Tendencia central de la variables:
+
+*Seguridad en Lugares Públicos*
+```{r}
+summary(data$Seguridad_LP)
+```
+
+*Sexo*
+```{r}
+summary(data$Sexo)
+```
+
+*Edad*
+```{r}
+summary(data$Edad)
+```
+
+*Confianza*
+```{r}
+summary(data$Confianza)
+```
+
+```{r}
+summary(data$Estrato_Sociodemográfico)
+```
+
+#Medidas de dispersión de las variable:
+
+*Edad* -> Solo hay medidas de dispersión de esta variable al ser una variable numérica
+```{r}
+#Rango Intercuartílico
+quantile(data$Edad,0.75)-quantile(data$Edad,0.25)
+```
+
+```{r}
+#Varianza
+var(data$Edad)
+```
+
+```{r}
+#Desv. Estándar
+sd(data$Edad)
+```
+
+```{r}
+#Coef. Variación
+sd(data$Edad)/mean(data$Edad) 
+```
+
+Una posible prueba estadística a utilizar es la *Regresión Logística Ordinal*, pues la variable dependiente de Delincuencia se categoriza como ordinal.
+```{r}
+library(MASS)
+modelo <- polr(Delincuencia ~ Sexo + Edad + Confianza + Seguridad_LP + Seguridad_LPrv + 
+                 Estrato_Sociodemográfico_Alto + Estrato_Sociodemográfico_Medio, data = data, Hess=T)
+summary(modelo)
+```
+
+```{r}
+summary_table <- coef(summary(modelo))
+summary_table
+```
+
+```{r}
+pval <- pnorm(abs(summary_table[, "t value"]),lower.tail = FALSE)* 2
+pval
+```
+
+```{r}
+summary_table <- cbind(summary_table, "p value" = pval)
+summary_table
+```
+Se visualiza que todas las variables independientes son menores a 0.05; a excepción de las variables Sexo, Edad y Estrato Sociodemográfico Medio
+
+```{r}
+exp(coef(modelo))
+```
+
+```{r}
+coef(summary(modelo))
+```
+
+Probabilidad del evento: exponencial del B0
+
+#Ecuación del modelo
+Exp(Value - ((Value.x) + (Value.Y)))
+*Prob. del primer corte ( >= Se Mantuvo)*
+
+```{r}
+num = exp(-2.741400077 - ((0.128440804*1) + (0.003550357*40) + (-0.201537789*5) + (-0.290433636*3) +
+                            (-0.056762095*2) + (-0.795052472*1)))
+denom = 1 + num
+Aumentó_SeMantuvo1= num/denom
+Aumentó_SeMantuvo1
+```
+La probabilidad de que un hombre de 40 años con Estrato Sociodemográfico Alto, con una confianza en las instituciones de 5 (siendo el 10 máximo) y con una baja seguridad en lugares públicos y lugares privados   tenga una percepción de que la delincuencia en Lima se mantuvo o aumentó es de 44.42%
+
+
+```{r}
+library(DescTools)
+PseudoR2(modelo, which = c("Nagelkerke"))
+```
+El modelo predice un 14.40% de variabilidad de la variable dependiente
+
+
+##ANÁLISIS FACTORIAL EXPLOTATORIO POR COMPONENTES PRINCIPALES
+```{r}
+library(dplyr)
+data2=select(data, "Edad", "Confianza", "Seguridad_LP", "Seguridad_LPrv", "Vigilancia")
+summary(data2)
+```
+
+```{r}
+library(polycor)
+corMatrix=polycor::hetcor(data2)$correlations
+corMatrix
+```
+
+```{r}
+library(corrplot)
+correlacion<-round(cor(data2), 1) 
+corrplot(correlacion, method="number", type="upper")
+```
+
+```{r}
+library(psych)
+KMO(corMatrix)
+```
+El Overal MSA es de 0.52. Por lo cual se puede proseguir con el estudio
+
+```{r}
+cortest.bartlett(corMatrix,n=nrow(data2))$p.value>0.05
+```
+Se corrobora la información anterior
+
+```{r}
+#Componentes Principales
+fa.parallel(data2, fm="pa", fa="pc", main = "Gráfico de sedimentación Componentes Principales")
+```
+
+```{r}
+library(factoextra)
+library(FactoMineR)
+res.pca <-PCA(data2, graph = FALSE)
+eig.val <-get_eig(res.pca)
+eig.val
+```
+Haya dos eigen-values mayores a 1; por lo que R nos recomienda trabajar con 2 componentes
+
+```{r}
+fviz_pca_var(res.pca, col.var = "black",repel = TRUE)
+```
+
+```{r}
+comp<- pca(data2,nfactors = 2,rotate = "varimax")
+```
+
+```{r}
+fa.diagram(comp)
+```
+
+```{r}
+#Comunalidad
+sort(comp$communality)
+```
+La variable Seguridad_LP (Percepción de Seguridad en Lugares Públicos) ha aportado a más componentes
+
+
+```{r}
+#Singularidad
+sort(comp$uniquenesses)
+```
+La variable Seguridad_LPriv (Percepción de Seguridad en Lugares Privados) es la que ha aportado más a un solo componente
+
+```{r}
+#Complejidad
+sort(comp$complexity)
+```
+La variable Seguridad_LP (Percepción de Seguridad en Lugares Públicos) ha aportado a más componentes
+
+
+```{r}
+comp_casos<-as.data.frame(comp$scores)#Volver score en un data frame
+data$Instituciones<- comp_casos$RC1 
+data$Seguridad <- comp_casos$RC2
+summary(data$Instituciones)
+```
+
+```{r}
+library(BBmisc)
+data$Instituciones = normalize(data$Instituciones, 
+                                        method = "range", 
+                                        margin=2, # by column
+                                        range = c(0, 100))
+
+data$Seguridad = normalize(data$Seguridad, 
+                                        method = "range", 
+                                        margin=2, # by column
+                                        range = c(0, 100))
+summary(data$Seguridad)
+```
+
+```{r}
+hist(data$Instituciones)
+```
+
+```{r}
+hist(data$Seguridad)
+```
+
+```{r}
+data$Delincuencia = as.ordered(data$Delincuencia)
+```
+
+```{r}
+modelo1 <- polr(Delincuencia ~ Instituciones +Seguridad,
+                data = data, Hess=T)
+summary(modelo1)
+```
+
+```{r}
+summary_table1 <- coef(summary(modelo1))
+summary_table1
+```
+
+```{r}
+pval1 <- pnorm(abs(summary_table1[, "t value"]),lower.tail = FALSE)* 2
+pval1
+```
+
+```{r}
+summary_table1 <- cbind(summary_table1, "p value" = pval1)
+summary_table1
+```
+Todas las variables son válidas al presentar p-values menores a 0.05
+
+```{r}
+exp(coef(modelo1))
+```
+
+Probabilidad del evento: exponencial del B0
+
+#Ecuación del modelo
+Exp(Value - ((Value.x) + (Value.Y)))
+*Prob. del primer corte ( >= Se Mantuvo)*
+
+```{r}
+num_1 = exp(-3.16095651 - ((-0.04315045*25) + (-0.02245342*50)))
+denom_1 = 1 + num_1
+Aumentó_SeMantuvo= num_1/denom_1
+Aumentó_SeMantuvo
+```
+Al presentar una confianza institucional de 25 (siendo 100 máximo) y una percepción de seguridad en 50 (siendo 100 máximo), hay un 27.69% de porbabilidad de que la persona sienta que la delincuencia se mantuvo o aumentó en Lima metropolitana
+
+```{r}
+PseudoR2(modelo1, which = c("Nagelkerke"))
+```
+El modelo predice un 13.18% de variabilidad de la variable dependiente
+
+En conclusión, se puede verificar que a pesar de las dos pruebas de regresión logística ordinal, una con todas las variables seleccionadas y la otra con dos variables que fueron resultado del análisis factorial, no se pudo afirmar que las variables independientes seleccionadas predizcan a la variable dependiente de percepción de inseguridad ciudadana
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
